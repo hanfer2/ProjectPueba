@@ -1,0 +1,390 @@
+select primera.nombre_componente, primera.No, segunda.Nojustificada, tercera.calamidad, cuarta.estudio, quinta.trabajo, sexta.transporteMenos, septima.transporteMas
+from 
+    (select count(asiste) as No, asiste, nombre_componente, count(cod_motivo) as Nojustificada, cod_motivo
+        from cu_asistencias,
+              (select cod_componente, nombre_componente from v_componentes_programas 
+                where semestre='1' and cod_programa='003') as componente 
+        where substr(codigo,1,6)= cod_componente and asiste=false  and cod_motivo='0' and cod_interno IN (select cod_interno from v_estudiantes_activos) group by cod_motivo, nombre_componente,asiste)as primera,
+        
+    (select count(asiste) as excusa, asiste, nombre_componente, count(cod_motivo) as Nojustificada, cod_motivo
+        from cu_asistencias, 
+               (select cod_componente, nombre_componente from v_componentes_programas 
+                where semestre='1' and cod_programa='003') as componente
+        where substr(codigo,1,6)= cod_componente and asiste=false  and cod_motivo='1' and cod_interno IN (select cod_interno from v_estudiantes_activos) group by cod_motivo, nombre_componente,asiste)as segunda,
+        
+    (select count(asiste) as excusa, asiste, nombre_componente, count(cod_motivo) as calamidad, cod_motivo
+        from cu_asistencias, 
+               (select cod_componente, nombre_componente from v_componentes_programas 
+                where semestre='1' and cod_programa='003') as componente
+        where substr(codigo,1,6)= cod_componente and asiste=false  and cod_motivo='2' and cod_interno IN (select cod_interno from v_estudiantes_activos) group by cod_motivo, nombre_componente,asiste)as tercera,
+        
+    (select count(asiste) as excusa, asiste, nombre_componente, count(cod_motivo) as estudio, cod_motivo
+        from cu_asistencias, 
+               (select cod_componente, nombre_componente from v_componentes_programas 
+                where semestre='1' and cod_programa='003') as componente
+        where substr(codigo,1,6)= cod_componente and asiste=false  and cod_motivo='4' and cod_interno IN (select cod_interno from v_estudiantes_activos) group by cod_motivo, nombre_componente,asiste)as cuarta,
+        
+     (select count(asiste) as excusa, asiste, nombre_componente, count(cod_motivo) as trabajo, cod_motivo
+        from cu_asistencias, 
+               (select cod_componente, nombre_componente from v_componentes_programas 
+                where semestre='1' and cod_programa='003') as componente
+        where substr(codigo,1,6)= cod_componente and asiste=false  and cod_motivo='3' and cod_interno IN (select cod_interno from v_estudiantes_activos) group by cod_motivo, nombre_componente,asiste)as quinta,
+        
+      (select count(asiste) as excusa, asiste, nombre_componente, count(cod_motivo) as transporteMenos, cod_motivo
+        from cu_asistencias, 
+               (select cod_componente, nombre_componente from v_componentes_programas 
+                where semestre='1' and cod_programa='003') as componente
+        where substr(codigo,1,6)= cod_componente and asiste=false  and cod_motivo='5' and cod_interno IN (select cod_interno from v_estudiantes_activos) group by cod_motivo, nombre_componente,asiste)as sexta,
+        
+     (select count(asiste) as excusa, asiste, nombre_componente, count(cod_motivo) as transporteMas, cod_motivo
+        from cu_asistencias, 
+               (select cod_componente, nombre_componente from v_componentes_programas 
+                where semestre='1' and cod_programa='003') as componente
+        where substr(codigo,1,6)= cod_componente and asiste=false  and cod_motivo='6' and cod_interno IN (select cod_interno from v_estudiantes_activos) group by cod_motivo, nombre_componente, asiste)as septima
+          
+where primera.nombre_componente = segunda.nombre_componente 
+and primera.nombre_componente = tercera.nombre_componente
+and primera.nombre_componente = cuarta.nombre_componente 
+and primera.nombre_componente = quinta.nombre_componente
+and primera.nombre_componente = sexta.nombre_componente
+and primera.nombre_componente = septima.nombre_componente
+;
+*************************Consulta por inasistencia justificadas****************************************************************************************************
+
+select  interna1.nombre_componente, interna1.excusaMedica, interna1.calamidad, interna2.transporte, interna2.estudio
+from
+   (select paila1.nombre_componente, paila2.totalInasistencia, paila2.calamidad, paila1.excusaMedica
+   from
+      (select primera.nombre_componente, segunda.totalInasistencia, segunda.excusaMedica
+       from 
+          (select cod_componente, nombre_componente from v_componentes_programas where semestre='1' and cod_programa='003') as primera
+        
+         LEFT OUTER JOIN
+        
+          (select count(asiste) as totalInasistencia, asiste, nombre_componente, count(cod_motivo) as excusaMedica, cod_motivo
+            from cu_asistencias, 
+               (select cod_componente, nombre_componente from v_componentes_programas where semestre='1' and cod_programa='003') as componente
+          where substr(codigo,1,6)= cod_componente and asiste=false  and cod_motivo='1' and cod_interno IN (select cod_interno from v_estudiantes_activos) group by cod_motivo, nombre_componente,asiste)as segunda
+
+     ON (primera.nombre_componente= segunda.nombre_componente))as paila1
+
+    LEFT OUTER JOIN
+
+     (select primera.nombre_componente, tercera.totalInasistencia, tercera.calamidad
+       from 
+          (select cod_componente, nombre_componente from v_componentes_programas where semestre='1' and cod_programa='003') as primera
+         LEFT OUTER JOIN
+        
+        (select count(asiste) as totalInasistencia, asiste, nombre_componente, count(cod_motivo) as calamidad, cod_motivo
+            from cu_asistencias, 
+               (select cod_componente, nombre_componente from v_componentes_programas 
+                where semestre='1' and cod_programa='003') as componente
+            where substr(codigo,1,6)= cod_componente and asiste=false  and cod_motivo='2' and cod_interno IN (select cod_interno from v_estudiantes_activos) group by cod_motivo, nombre_componente,asiste)as tercera
+
+         ON (primera.nombre_componente= tercera.nombre_componente))as paila2
+    
+     ON (paila1.nombre_componente= paila2.nombre_componente))as interna1
+
+LEFT OUTER JOIN
+
+(select pa.nombre_componente, pa.totalInasistencia, pa.transporte, pa2.estudio
+  from
+      (select primera.nombre_componente , segunda.totalInasistencia, segunda.transporte
+       from 
+          (select cod_componente, nombre_componente from v_componentes_programas where semestre='1' and cod_programa='003') as primera
+        
+         LEFT OUTER JOIN
+        
+          (select count(asiste) as totalInasistencia, asiste, nombre_componente, count(cod_motivo) as transporte
+            from cu_asistencias, 
+               (select cod_componente, nombre_componente from v_componentes_programas where semestre='1' and cod_programa='003') as componente
+          where substr(codigo,1,6)= cod_componente and asiste=false  and cod_motivo='6' and cod_interno IN (select cod_interno from v_estudiantes_activos) group by cod_motivo, nombre_componente,asiste)as segunda
+
+     ON (primera.nombre_componente= segunda.nombre_componente))as pa
+
+ LEFT OUTER JOIN
+  
+(select primera.nombre_componente, segunda.totalInasistencia, segunda.estudio
+       from
+       
+         (select cod_componente, nombre_componente from v_componentes_programas where semestre='1' and cod_programa='003') as primera
+        
+         LEFT OUTER JOIN
+        
+          (select count(asiste) as totalInasistencia, asiste, nombre_componente, count(cod_motivo) as estudio, cod_motivo
+            from cu_asistencias, 
+               (select cod_componente, nombre_componente from v_componentes_programas where semestre='1' and cod_programa='003') as componente
+          where substr(codigo,1,6)= cod_componente and asiste=false  and cod_motivo='4' and cod_interno IN (select cod_interno from v_estudiantes_activos) group by cod_motivo, nombre_componente,asiste)as segunda
+
+     ON (primera.nombre_componente= segunda.nombre_componente))as pa2
+     
+     ON (pa.nombre_componente= pa2.nombre_componente))as interna2
+     
+ON (interna1.nombre_componente= interna2.nombre_componente)
+;
+*****************************inasistencias NO justificadas*******************************
+
+select  interna1.nombre_componente, interna1.Nojustificada, interna1.trabajo, interna2.transportemenos
+from
+   (select paila1.nombre_componente, paila2.totalInasistencia, paila2.trabajo, paila1.Nojustificada
+   from
+      (select primera.nombre_componente, segunda.totalInasistencia, segunda.Nojustificada
+       from 
+          (select cod_componente, nombre_componente from v_componentes_programas where semestre='1' and cod_programa='003') as primera
+        
+         LEFT OUTER JOIN
+        
+          (select count(asiste) as totalInasistencia, asiste, nombre_componente, count(cod_motivo) as Nojustificada, cod_motivo
+            from cu_asistencias, 
+               (select cod_componente, nombre_componente from v_componentes_programas where semestre='1' and cod_programa='003') as componente
+          where substr(codigo,1,6)= cod_componente and asiste=false  and cod_motivo='0' and cod_interno IN (select cod_interno from v_estudiantes_activos) group by cod_motivo, nombre_componente,asiste)as segunda
+
+     ON (primera.nombre_componente= segunda.nombre_componente))as paila1
+
+    LEFT OUTER JOIN
+
+     (select primera.nombre_componente, tercera.totalInasistencia, tercera.trabajo
+       from 
+          (select cod_componente, nombre_componente from v_componentes_programas where semestre='1' and cod_programa='003') as primera
+         LEFT OUTER JOIN
+        
+        (select count(asiste) as totalInasistencia, asiste, nombre_componente, count(cod_motivo) as trabajo, cod_motivo
+            from cu_asistencias, 
+               (select cod_componente, nombre_componente from v_componentes_programas 
+                where semestre='1' and cod_programa='003') as componente
+            where substr(codigo,1,6)= cod_componente and asiste=false  and cod_motivo='3' and cod_interno IN (select cod_interno from v_estudiantes_activos) group by cod_motivo, nombre_componente,asiste)as tercera
+
+         ON (primera.nombre_componente= tercera.nombre_componente))as paila2
+    
+     ON (paila1.nombre_componente= paila2.nombre_componente))as interna1
+
+LEFT OUTER JOIN
+
+(select primera.nombre_componente , segunda.totalInasistencia, segunda.transportemenos
+       from 
+          (select cod_componente, nombre_componente from v_componentes_programas where semestre='1' and cod_programa='003') as primera
+        
+         LEFT OUTER JOIN
+        
+          (select count(asiste) as totalInasistencia, asiste, nombre_componente, count(cod_motivo) as transportemenos
+            from cu_asistencias, 
+               (select cod_componente, nombre_componente from v_componentes_programas where semestre='1' and cod_programa='003') as componente
+          where substr(codigo,1,6)= cod_componente and asiste=false  and cod_motivo='5' and cod_interno IN (select cod_interno from v_estudiantes_activos) group by cod_motivo, nombre_componente,asiste)as segunda
+
+     ON (primera.nombre_componente= segunda.nombre_componente)
+     )as interna2
+     
+ON (interna1.nombre_componente= interna2.nombre_componente)
+;
+**********************************************
+select a1.nombre_componente, excusamedica, calamidad, transporte, estudio, nojustificada, trabajo, transportemenos 
+from inasistencia_componente_j a1 , inasistencia_componente_noj a2, total_inasistencia_componente a3
+where 
+
+a1.nombre_componente=a2.nombre_componente and a1.nombre_componente=a3.nombre_componente
+;
+***************devuelve el nombre de un componente del semestre 1 porgrama 003
+(SELECT v_componentes_programas.cod_componente
+           FROM v_componentes_programas
+          WHERE v_componentes_programas.semestre = 1 AND v_componentes_programas.cod_programa::text = '003' and nombre_componente='QUIMICA I');
+          
+          
+*******************************devuelve los componente y cursos
+select codigo
+from cu_asistencias
+where  substr(cu_asistencias.codigo, 1, 6) =
+(SELECT v_componentes_programas.cod_componente
+           FROM v_componentes_programas
+          WHERE v_componentes_programas.semestre = 1 AND v_componentes_programas.cod_programa::text = '003' and nombre_componente='QUIMICA I')
+group by codigo order by  codigo asc;
+
+
+SELECT substr(cu.codigo,1,6) as nombre, gru.grupo,gru.subgrupo 
+from cu_asistencias cu, a_grupos gru
+where substr(cu.codigo,7,3)='174'
+group by nombre,gru.grupo, gru.subgrupo 
+;
+
+SELECT substr(cu.codigo,7,3) as nombre
+from cu_asistencias cu
+where substr(cu.codigo,1,6)='090011' and substr(cu.codigo,7,3) IN (select codigo from a_grupos where cod_programa='003')
+group by nombre order by nombre asc
+;
+
+select no1.curso, no1.inasistencia as totalinasistencia, no1.inasistencia2 as trabajo, no2.inasistencia as nojustificada, no2.inasistencia2 as trasnportemenos
+from
+  (select asistencia.curso, asistencia.inasistencia, motivo1.inasistencia2
+   from
+        (SELECT (grupo||'-'||subgrupo)as curso, inasistencia from a_grupos, (select substr(cu.codigo,7,3) as       
+nombre,  count (asiste)as inasistencia from cu_asistencias cu where substr(cu.codigo,1,6)=(select     
+cod_componente from  v_componentes_programas where nombre_componente='APRECIACIÓN ARTÍSTICA' and 
+semestre='1' and     cod_programa='003') and substr(cu.codigo,7,3) IN (select codigo from     a_grupos where 
+cod_programa='003')     and asiste=false and cod_interno IN (select cod_interno from     a_persona where 
+cod_estado='11') group by    nombre order by nombre asc)as pi where codigo=nombre and cod_programa='003') 
+asistencia
+left join
+   (SELECT (grupo||'-'||subgrupo)as curso, inasistencia2 from a_grupos, 
+   (select substr(cu.codigo,7,3) as nombre, count (asiste)as inasistencia2 from cu_asistencias cu where substr   
+(cu.codigo,1,6)=(select cod_componente from v_componentes_programas where    
+nombre_componente='APRECIACIÓN ARTÍSTICA' and semestre='1' and cod_programa='003') and substr  
+(cu.codigo,7,3) IN (select codigo from a_grupos where cod_programa='003') and asiste=false and  cod_motivo='3' 
+and cod_interno IN (select cod_interno from a_persona where cod_estado='11') group by    nombre order by 
+nombre asc)as pi where codigo=nombre and cod_programa='003') motivo1
+ON(asistencia.curso= motivo1.curso))as no1
+
+left join
+(select asistencia.curso, asistencia.inasistencia, motivo1.inasistencia2
+   from
+        (SELECT (grupo||'-'||subgrupo)as curso, inasistencia from a_grupos, (select substr(cu.codigo,7,3) as       
+nombre,      count (asiste)as inasistencia from cu_asistencias cu where substr(cu.codigo,1,6)=(select     
+cod_componente from      v_componentes_programas where nombre_componente='APRECIACIÓN ARTÍSTICA' and 
+semestre='1' and     cod_programa='003') and substr(cu.codigo,7,3) IN (select codigo from     a_grupos where 
+cod_programa='003')     and asiste=false and cod_motivo='0' and cod_interno IN (select cod_interno from     a_persona 
+where cod_estado='11') group by    nombre order by nombre asc)as pi where codigo=nombre and 
+cod_programa='003') asistencia
+left join
+   (SELECT (grupo||'-'||subgrupo)as curso, inasistencia2 from a_grupos, 
+   (select substr(cu.codigo,7,3) as nombre, count (asiste)as inasistencia2 from cu_asistencias cu where substr   
+(cu.codigo,1,6)=(select cod_componente from v_componentes_programas where    
+nombre_componente='APRECIACIÓN ARTÍSTICA' and semestre='1' and cod_programa='003') and substr  
+(cu.codigo,7,3) IN (select codigo from a_grupos where cod_programa='003') and asiste=false and    cod_motivo='5' 
+and cod_interno IN (select cod_interno from a_persona where cod_estado='11') group by    nombre order by 
+nombre asc)as pi where codigo=nombre and cod_programa='003') motivo1
+ON(asistencia.curso= motivo1.curso))as no2
+ON(no1.curso=no2.curso)
+
+;
+*********************************total***************************
+SELECT justificadas.curso, justificadas.total, justificadas.excusamedica, justificadas.calamidad, justificadas.estudio , justificadas.transportemas, nojustificadas.totalinasistencia, nojustificadas.trabajo, nojustificadas.nojustificada, nojustificadas.trasnportemenos
+
+FROM
+(select si1.curso, si1.total, si1.excusamedica, si1.calamidad, si2.estudio , si2.transportemas
+from
+(select no1.curso, no1.inasistencia as total, no1.inasistencia2 as excusamedica, no2.inasistencia2 as calamidad
+from
+  (select asistencia.curso, asistencia.inasistencia, motivo1.inasistencia2
+   from
+        (SELECT (grupo||'-'||subgrupo)as curso, inasistencia from a_grupos, (select substr(cu.codigo,7,3) as       
+nombre,  count (asiste)as inasistencia from cu_asistencias cu where substr(cu.codigo,1,6)=(select     cod_componente 
+from  v_componentes_programas where nombre_componente='$param' and semestre='1' and     
+cod_programa='003') and substr(cu.codigo,7,3) IN (select codigo from     a_grupos where cod_programa='003')     
+and asiste=false and cod_interno IN (select cod_interno from     a_persona where cod_estado='11') group by    
+nombre order by nombre asc)as pi where codigo=nombre and cod_programa='003') asistencia
+left join
+   (SELECT (grupo||'-'||subgrupo)as curso, inasistencia2 from a_grupos, 
+   (select substr(cu.codigo,7,3) as nombre, count (asiste)as inasistencia2 from cu_asistencias cu where substr   
+(cu.codigo,1,6)=(select cod_componente from v_componentes_programas where    
+nombre_componente='$param' and semestre='1' and cod_programa='003') and substr  
+(cu.codigo,7,3) IN (select codigo from a_grupos where cod_programa='003') and asiste=false and  cod_motivo='1' 
+and cod_interno IN (select cod_interno from a_persona where cod_estado='11') group by    nombre order by 
+nombre asc)as pi where codigo=nombre and cod_programa='003') motivo1
+ON(asistencia.curso= motivo1.curso))as no1
+left join
+(select asistencia.curso, asistencia.inasistencia, motivo1.inasistencia2
+   from
+        (SELECT (grupo||'-'||subgrupo)as curso, inasistencia from a_grupos, (select substr(cu.codigo,7,3) as       
+nombre,      count (asiste)as inasistencia from cu_asistencias cu where substr(cu.codigo,1,6)=(select     
+cod_componente from      v_componentes_programas where nombre_componente='$param' and 
+semestre='1' and     cod_programa='003') and substr(cu.codigo,7,3) IN (select codigo from     a_grupos where 
+cod_programa='003')     and asiste=false and cod_interno IN (select cod_interno from     a_persona where 
+cod_estado='11') group by    nombre order by nombre asc)as pi where codigo=nombre and cod_programa='003') 
+asistencia
+left join
+   (SELECT (grupo||'-'||subgrupo)as curso, inasistencia2 from a_grupos, 
+   (select substr(cu.codigo,7,3) as nombre, count (asiste)as inasistencia2 from cu_asistencias cu where substr   
+(cu.codigo,1,6)=(select cod_componente from v_componentes_programas where    
+nombre_componente='$param' and semestre='1' and cod_programa='003') and substr  
+(cu.codigo,7,3) IN (select codigo from a_grupos where cod_programa='003') and asiste=false and    cod_motivo='2' 
+and cod_interno IN (select cod_interno from a_persona where cod_estado='11') group by    nombre order by 
+nombre asc)as pi where codigo=nombre and cod_programa='003') motivo1
+ON(asistencia.curso= motivo1.curso))as no2
+ON(no1.curso=no2.curso))as si1
+left join
+(select no1.curso, no1.inasistencia as total, no1.inasistencia2 as estudio , no2.inasistencia2 as transportemas
+from
+  (select asistencia.curso, asistencia.inasistencia, motivo1.inasistencia2
+   from
+        (SELECT (grupo||'-'||subgrupo)as curso, inasistencia from a_grupos, (select substr(cu.codigo,7,3) as       
+nombre,  count (asiste)as inasistencia from cu_asistencias cu where substr(cu.codigo,1,6)=(select     cod_componente 
+from  v_componentes_programas where nombre_componente='$param' and semestre='1' and     
+cod_programa='003') and substr(cu.codigo,7,3) IN (select codigo from     a_grupos where cod_programa='003')     
+and asiste=false and cod_interno IN (select cod_interno from     a_persona where cod_estado='11') group by    
+nombre order by nombre asc)as pi where codigo=nombre and cod_programa='003') asistencia
+left join
+   (SELECT (grupo||'-'||subgrupo)as curso, inasistencia2 from a_grupos, 
+   (select substr(cu.codigo,7,3) as nombre, count (asiste)as inasistencia2 from cu_asistencias cu where substr   
+(cu.codigo,1,6)=(select cod_componente from v_componentes_programas where    
+nombre_componente='$param' and semestre='1' and cod_programa='003') and substr  
+(cu.codigo,7,3) IN (select codigo from a_grupos where cod_programa='003') and asiste=false and  cod_motivo='4' 
+and cod_interno IN (select cod_interno from a_persona where cod_estado='11') group by    nombre order by 
+nombre asc)as pi where codigo=nombre and cod_programa='003') motivo1
+ON(asistencia.curso= motivo1.curso))as no1
+left join
+(select asistencia.curso, asistencia.inasistencia, motivo1.inasistencia2
+   from
+        (SELECT (grupo||'-'||subgrupo)as curso, inasistencia from a_grupos, (select substr(cu.codigo,7,3) as       
+nombre,      count (asiste)as inasistencia from cu_asistencias cu where substr(cu.codigo,1,6)=(select     
+cod_componente from      v_componentes_programas where nombre_componente='$param' and 
+semestre='1' and     cod_programa='003') and substr(cu.codigo,7,3) IN (select codigo from     a_grupos where 
+cod_programa='003')     and asiste=false and cod_interno IN (select cod_interno from     a_persona where 
+cod_estado='11') group by    nombre order by nombre asc)as pi where codigo=nombre and cod_programa='003') 
+asistencia
+left join
+   (SELECT (grupo||'-'||subgrupo)as curso, inasistencia2 from a_grupos, 
+   (select substr(cu.codigo,7,3) as nombre, count (asiste)as inasistencia2 from cu_asistencias cu where substr   
+(cu.codigo,1,6)=(select cod_componente from v_componentes_programas where    
+nombre_componente='$param' and semestre='1' and cod_programa='003') and substr  
+(cu.codigo,7,3) IN (select codigo from a_grupos where cod_programa='003') and asiste=false and    cod_motivo='6' 
+and cod_interno IN (select cod_interno from a_persona where cod_estado='11') group by    nombre order by 
+nombre asc)as pi where codigo=nombre and cod_programa='003') motivo1
+ON(asistencia.curso= motivo1.curso))as no2
+ON(no1.curso=no2.curso))as si2
+ON(si1.curso=si2.curso)
+
+)as justificadas
+
+LEFT JOIN
+
+(select no1.curso, no1.inasistencia as totalinasistencia, no1.inasistencia2 as trabajo, no2.inasistencia as nojustificada, no2.inasistencia2 as trasnportemenos
+from
+  (select asistencia.curso, asistencia.inasistencia, motivo1.inasistencia2
+   from
+        (SELECT (grupo||'-'||subgrupo)as curso, inasistencia from a_grupos, (select substr(cu.codigo,7,3) as       
+nombre,  count (asiste)as inasistencia from cu_asistencias cu where substr(cu.codigo,1,6)=(select     
+cod_componente from  v_componentes_programas where nombre_componente='$param' and 
+semestre='1' and     cod_programa='003') and substr(cu.codigo,7,3) IN (select codigo from     a_grupos where 
+cod_programa='003')     and asiste=false and cod_interno IN (select cod_interno from     a_persona where 
+cod_estado='11') group by    nombre order by nombre asc)as pi where codigo=nombre and cod_programa='003') 
+asistencia
+left join
+   (SELECT (grupo||'-'||subgrupo)as curso, inasistencia2 from a_grupos, 
+   (select substr(cu.codigo,7,3) as nombre, count (asiste)as inasistencia2 from cu_asistencias cu where substr   
+(cu.codigo,1,6)=(select cod_componente from v_componentes_programas where    
+nombre_componente='$param' and semestre='1' and cod_programa='003') and substr  
+(cu.codigo,7,3) IN (select codigo from a_grupos where cod_programa='003') and asiste=false and  cod_motivo='3' 
+and cod_interno IN (select cod_interno from a_persona where cod_estado='11') group by    nombre order by 
+nombre asc)as pi where codigo=nombre and cod_programa='003') motivo1
+ON(asistencia.curso= motivo1.curso))as no1
+
+left join
+(select asistencia.curso, asistencia.inasistencia, motivo1.inasistencia2
+   from
+        (SELECT (grupo||'-'||subgrupo)as curso, inasistencia from a_grupos, (select substr(cu.codigo,7,3) as       
+nombre,      count (asiste)as inasistencia from cu_asistencias cu where substr(cu.codigo,1,6)=(select     
+cod_componente from      v_componentes_programas where nombre_componente='$param' and 
+semestre='1' and     cod_programa='003') and substr(cu.codigo,7,3) IN (select codigo from     a_grupos where 
+cod_programa='003')     and asiste=false and cod_motivo='0' and cod_interno IN (select cod_interno from     a_persona 
+where cod_estado='11') group by    nombre order by nombre asc)as pi where codigo=nombre and 
+cod_programa='003') asistencia
+left join
+   (SELECT (grupo||'-'||subgrupo)as curso, inasistencia2 from a_grupos, 
+   (select substr(cu.codigo,7,3) as nombre, count (asiste)as inasistencia2 from cu_asistencias cu where substr   
+(cu.codigo,1,6)=(select cod_componente from v_componentes_programas where    
+nombre_componente='$param' and semestre='1' and cod_programa='003') and substr  
+(cu.codigo,7,3) IN (select codigo from a_grupos where cod_programa='003') and asiste=false and    cod_motivo='5' 
+and cod_interno IN (select cod_interno from a_persona where cod_estado='11') group by    nombre order by 
+nombre asc)as pi where codigo=nombre and cod_programa='003') motivo1
+ON(asistencia.curso= motivo1.curso))as no2
+ON(no1.curso=no2.curso)) as nojustificadas
+
+ON(justificadas.curso=nojustificadas.curso)

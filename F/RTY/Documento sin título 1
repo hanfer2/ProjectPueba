@@ -1,0 +1,56 @@
+Warning: pg_query(): Query failed: ERROR: null value in column "realizado_por" violates not-null constraint CONTEXT: SQL statement "INSERT INTO t_reporte_cambios VALUES(NOW(), $1 , 'ASISTENCIA', $2 , CASE WHEN $3 THEN 'T' ELSE 'F' END, CASE WHEN $4 THEN 'T' ELSE 'F' END)" PL/pgSQL function "tri_actualizar_asiste_estud" line 4 at SQL statement in /home/sieduv/public_html/talentos/lib/db/DB.class.php on line 147
+SQL ERROR: ERROR: null value in column "realizado_por" violates not-null constraint CONTEXT: SQL statement "INSERT INTO t_reporte_cambios VALUES(NOW(), $1 , 'ASISTENCIA', $2 , CASE WHEN $3 THEN 'T' ELSE 'F' END, CASE WHEN $4 THEN 'T' ELSE 'F' END)" PL/pgSQL function "tri_actualizar_asiste_estud" line 4 at SQL statement 
+SQL:UPDATE cu_asistencias SET codigo ='0900111931101-4151', cod_interno ='4151', cod_clase ='0900111931101', asiste ='t' WHERE codigo = '0900111931101-4151'
+Warning: pg_num_rows(): supplied argument is not a valid PostgreSQL result resource in /home/sieduv/public_html/talentos/lib/db/DB.class.php on line 251
+
+Warning: pg_num_fields(): supplied argument is not a valid PostgreSQL result resource in /home/sieduv/public_html/talentos/lib/db/DB.class.php on line 243
+
+Warning: Cannot modify header information - headers already sent by (output started at /home/sieduv/public_html/talentos/lib/db/DB.class.php:147) in /home/sieduv/public_html/talentos/helpers/RouteHelper.php on line 84
+
+***********************************errore para notificaiones
+
+Warning: pg_query(): Query failed: ERROR: column "cedula" does not exist in /home/sieduv/public_html/talentos/lib/db/DB.class.php on line 147
+SQL ERROR: ERROR: column "cedula" does not exist 
+SQL:DELETE FROM pe_notificaciones_estudiantes WHERE cedula = '3508' and cod_mensaje ='4'
+Warning: pg_num_rows(): supplied argument is not a valid PostgreSQL result resource in /home/sieduv/public_html/talentos/lib/db/DB.class.php on line 251
+
+Warning: pg_num_fields(): supplied argument is not a valid PostgreSQL result resource in /home/sieduv/public_html/talentos/lib/db/DB.class.php on line 243
+**********************************************************************************************************
+select cod_componente, nombre_componente from v_componentes_programas where semestre='1' and cod_programa='003';
+
+
+select codigo from (select cod_componente, nombre_componente from v_componentes_programas where semestre='1' and cod_programa='003') as asistencia , cu_asistencia
+
+select count(asiste), asiste from cu_asistencias where codigo like '100008%' group by asiste;
+
+
+select count(asiste)  from cu_asistencias where SUBSTR(codigo,0,6) IN  (select cod_componente from v_componentes_programas where semestre='1' and cod_programa='003')  group by asiste;
+
+/*ahi vamos T.T
+
+select cod_interno from cu_asistencias , (select cod_componente, nombre_componente from v_componentes_programas where semestre='1' and cod_programa='003') as componente where SUBSTR(codigo,1,6) = cod_componente;
+
+
+select nombre_componente , sum(inasistencias)as inasistencia from 
+(select cod_interno, nombre_componente from cu_asistencias , (select cod_componente, nombre_componente from v_componentes_programas where semestre='1' and cod_programa='003') as componente where SUBSTR(codigo,1,6) = cod_componente) as interno natural join vi_inasistencias where cod_programa='003' GROUP BY nombre_componente order by nombre_componente;
+
+
+select count(asiste), asiste from cu_asistencias where substr(codigo,1,6) = '090001' and cod_interno IN (select cod_interno from v_estudiantes_activos) group by asiste;
+
+
+**************************************
+select count(asiste), asiste from cu_asistencias where substr(codigo,1,6) = '100008' and cod_interno IN (select cod_interno from v_estudiantes_activos) group by asiste;
+
+
+**********************jueves
+
+select primera.nombre_componente, No, excusa from (select count(asiste) as No, asiste, nombre_componente, count(cod_motivo) as Nojustificada, cod_motivo
+from cu_asistencias, (select cod_componente, nombre_componente from v_componentes_programas 
+                      where semestre='1' and cod_programa='003') as componente 
+where substr(codigo,1,6)= cod_componente and asiste=false  and cod_motivo='0' and cod_interno IN (select cod_interno from v_estudiantes_activos) group by cod_motivo, nombre_componente,asiste)as primera, 
+(select count(asiste) as excusa, asiste, nombre_componente, count(cod_motivo) as Nojustificada, cod_motivo
+from cu_asistencias, (select cod_componente, nombre_componente from v_componentes_programas 
+                      where semestre='1' and cod_programa='003') as componente 
+where substr(codigo,1,6)= cod_componente and asiste=false  and cod_motivo='1' and cod_interno IN (select cod_interno from v_estudiantes_activos) group by cod_motivo, nombre_componente,asiste)as segunda
+where primera.nombre_componente= segunda.nombre_componente
+;
